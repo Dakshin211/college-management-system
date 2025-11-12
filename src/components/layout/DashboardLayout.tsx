@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
+import Chatbot from '@/components/Chatbot';
 
 const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -23,6 +24,8 @@ const DashboardLayout = () => {
           <Outlet />
         </motion.main>
       </div>
+      
+      <Chatbot />
     </div>
   );
 };

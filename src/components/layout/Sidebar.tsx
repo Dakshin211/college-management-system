@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
-  Users,
+  User,
   BookOpen,
   FileText,
   DollarSign,
@@ -18,10 +18,10 @@ interface SidebarProps {
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-  { icon: Users, label: 'Students', path: '/students' },
-  { icon: BookOpen, label: 'Courses', path: '/courses' },
-  { icon: FileText, label: 'Marks', path: '/marks' },
-  { icon: DollarSign, label: 'Fees', path: '/fees' },
+  { icon: User, label: 'My Profile', path: '/profile' },
+  { icon: BookOpen, label: 'My Courses', path: '/courses' },
+  { icon: FileText, label: 'My Marks', path: '/marks' },
+  { icon: DollarSign, label: 'Fee Status', path: '/fees' },
   { icon: Calendar, label: 'Attendance', path: '/attendance' },
 ];
 
@@ -58,8 +58,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 <BookOpen className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-bold">CMIS</h1>
-                <p className="text-xs text-sidebar-foreground/70">EduAdmin</p>
+                <h1 className="text-lg font-bold">St. Horizon</h1>
+                <p className="text-xs text-sidebar-foreground/70">College Portal</p>
               </div>
             </div>
             <button

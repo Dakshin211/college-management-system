@@ -6,13 +6,16 @@ import Topbar from './Topbar';
 import Chatbot from '@/components/Chatbot';
 
 const DashboardLayout = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
-      <div className="flex flex-1 flex-col overflow-hidden lg:ml-70">
+      <div 
+        className="flex flex-1 flex-col overflow-hidden transition-all duration-300"
+        style={{ marginLeft: sidebarOpen ? '280px' : '0' }}
+      >
         <Topbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         
         <motion.main

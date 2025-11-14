@@ -41,12 +41,11 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
       {/* Sidebar */}
       <motion.aside
-        initial={{ x: -280 }}
+        initial={false}
         animate={{ x: isOpen ? 0 : -280 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className={cn(
           'fixed left-0 top-0 z-50 h-full w-70 bg-sidebar text-sidebar-foreground',
-          'lg:translate-x-0 lg:static',
           'shadow-xl'
         )}
       >
@@ -64,7 +63,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
             </div>
             <button
               onClick={onClose}
-              className="lg:hidden p-2 hover:bg-sidebar-accent rounded-lg transition-colors"
+              className="p-2 hover:bg-sidebar-accent rounded-lg transition-colors"
             >
               <X className="h-5 w-5" />
             </button>

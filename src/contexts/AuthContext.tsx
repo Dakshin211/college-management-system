@@ -1,72 +1,133 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
 
-interface User {
+interface Profile {
   id: string;
-  email: string;
   name: string;
-  role: 'student' | 'faculty' | 'admin';
+  email: string;
+  roll_no?: string;
+  branch?: string;
+  semester?: number;
+  batch?: string;
+  cgpa?: number;
+  attendance_percent?: number;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  session: Session | null;
+  profile: Profile | null;
+  login: (email: string, password: string) => Promise<{ error: any }>;
+  register: (name: string, email: string, password: string) => Promise<{ error: any }>;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Fetch profile data
+          setTimeout(async () => {
+            const { data } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .single();
+            
+            if (data) {
+              setProfile(data);
+            }
+          }, 0);
+        } else {
+          setProfile(null);
+        }
+        
+        setLoading(false);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single()
+          .then(({ data }) => {
+            if (data) {
+              setProfile(data);
+            }
+            setLoading(false);
+          });
+      } else {
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const login = async (email: string, password: string) => {
-    // Mock login - replace with actual API call
-    const mockUser: User = {
-      id: '1',
+    const { error } = await supabase.auth.signInWithPassword({
       email,
-      name: 'John Doe',
-      role: 'student',
-    };
-    localStorage.setItem('token', 'mock-jwt-token');
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    setUser(mockUser);
+      password,
+    });
+    return { error };
   };
 
   const register = async (name: string, email: string, password: string) => {
-    // Mock register - replace with actual API call
-    const mockUser: User = {
-      id: '1',
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { error } = await supabase.auth.signUp({
       email,
-      name,
-      role: 'student',
-    };
-    localStorage.setItem('token', 'mock-jwt-token');
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    setUser(mockUser);
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          name,
+        },
+      },
+    });
+    return { error };
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
+    setSession(null);
+    setProfile(null);
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        session,
+        profile,
         login,
         register,
         logout,
         isAuthenticated: !!user,
+        loading,
       }}
     >
       {children}

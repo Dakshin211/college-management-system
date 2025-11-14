@@ -35,11 +35,16 @@ const Login = () => {
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
-      await login(data.email, data.password);
-      toast.success('Login successful!');
-      navigate('/dashboard');
+      const { error } = await login(data.email, data.password);
+      
+      if (error) {
+        toast.error(error.message || 'Invalid credentials. Please try again.');
+      } else {
+        toast.success('Login successful!');
+        navigate('/dashboard');
+      }
     } catch (error) {
-      toast.error('Invalid credentials. Please try again.');
+      toast.error('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }

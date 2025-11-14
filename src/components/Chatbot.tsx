@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Bot } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MessageCircle, Send, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Message {
-  id: number;
+  id: string;
   text: string;
   sender: 'user' | 'bot';
   timestamp: Date;
@@ -15,191 +15,243 @@ interface Message {
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      text: "Hello! I'm your college assistant. How can I help you today?",
-      sender: 'bot',
-      timestamp: new Date(),
-    },
-  ]);
-  const [inputMessage, setInputMessage] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const quickReplies = [
-    'Check my attendance',
-    'View course schedule',
-    'Fee payment status',
-    'Exam timetable',
-  ];
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    }
+  }, [messages]);
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
+  const streamChat = async (userMessage: string) => {
+    const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat`;
+    
+    const allMessages = [
+      ...messages.map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.text })),
+      { role: 'user', content: userMessage }
+    ];
+
+    try {
+      const resp = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: allMessages }),
+      });
+
+      if (!resp.ok) {
+        const error = await resp.json();
+        throw new Error(error.error || 'Failed to get response');
+      }
+
+      if (!resp.body) throw new Error('No response body');
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = '';
+      let streamDone = false;
+      let assistantMessage = '';
+      
+      const botMessageId = Date.now().toString() + '-bot';
+      setMessages(prev => [...prev, {
+        id: botMessageId,
+        text: '',
+        sender: 'bot',
+        timestamp: new Date(),
+      }]);
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') {
+            streamDone = true;
+            break;
+          }
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              assistantMessage += content;
+              setMessages(prev => prev.map(m => 
+                m.id === botMessageId ? { ...m, text: assistantMessage } : m
+              ));
+            }
+          } catch {
+            textBuffer = line + '\n' + textBuffer;
+            break;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages(prev => [...prev, {
+        id: Date.now().toString() + '-error',
+        text: 'Sorry, I encountered an error. Please try again.',
+        sender: 'bot',
+        timestamp: new Date(),
+      }]);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!input.trim() || isLoading) return;
 
     const userMessage: Message = {
-      id: messages.length + 1,
-      text: inputMessage,
+      id: Date.now().toString(),
+      text: input,
       sender: 'user',
       timestamp: new Date(),
     };
 
-    setMessages([...messages, userMessage]);
-    setInputMessage('');
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
 
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse: Message = {
-        id: messages.length + 2,
-        text: getBotResponse(inputMessage),
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, botResponse]);
-    }, 1000);
+    await streamChat(input);
+    setIsLoading(false);
   };
 
-  const getBotResponse = (message: string): string => {
-    const lowerMessage = message.toLowerCase();
-    
-    if (lowerMessage.includes('attendance')) {
-      return "Your current attendance is 87%. You're meeting the minimum requirement of 75%. Keep it up!";
-    } else if (lowerMessage.includes('schedule') || lowerMessage.includes('timetable')) {
-      return "Your next class is Data Structures at 09:00 AM in Lab 201. Would you like to see your full schedule?";
-    } else if (lowerMessage.includes('fee')) {
-      return "Your fee payment status: ₹45,000 paid out of ₹50,000. Remaining balance: ₹5,000. Due date: 30th December.";
-    } else if (lowerMessage.includes('exam')) {
-      return "Your mid-semester exams are scheduled from 15th to 22nd January. Would you like to see the detailed timetable?";
-    } else {
-      return "I can help you with attendance, schedules, fees, exams, and more. What would you like to know?";
-    }
-  };
-
-  const handleQuickReply = (reply: string) => {
-    setInputMessage(reply);
-    handleSendMessage();
-  };
+  const quickReplies = [
+    'What are my courses?',
+    'Show my attendance',
+    'Check my marks',
+    'Fee status',
+  ];
 
   return (
     <>
-      {/* Chat Toggle Button */}
-      <AnimatePresence>
-        {!isOpen && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0 }}
-            className="fixed bottom-6 right-6 z-50"
-          >
-            <Button
-              onClick={() => setIsOpen(true)}
-              size="lg"
-              className="h-14 w-14 rounded-full shadow-2xl hover:shadow-glow transition-all"
-            >
-              <MessageCircle className="h-6 w-6" />
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 100, scale: 0.8 }}
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 100, scale: 0.8 }}
-            className="fixed bottom-6 right-6 z-50 w-96 max-w-[calc(100vw-3rem)]"
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-3rem)]"
           >
-            <Card className="shadow-2xl border-2">
-              <CardHeader className="bg-gradient-to-r from-primary to-accent text-primary-foreground">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-10 w-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                      <Bot className="h-5 w-5" />
+            <Card className="flex flex-col h-[600px] shadow-2xl border-2 border-primary/20">
+              <div className="flex items-center justify-between p-4 border-b bg-primary/5">
+                <div className="flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold text-foreground">College Assistant</h3>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsOpen(false)}
+                  className="h-8 w-8"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+                <div className="space-y-4">
+                  {messages.length === 0 && (
+                    <div className="text-center text-muted-foreground py-8">
+                      <MessageCircle className="h-12 w-12 mx-auto mb-3 text-primary/40" />
+                      <p className="text-sm">Ask me anything about your courses, marks, or fees!</p>
                     </div>
-                    <div>
-                      <CardTitle className="text-lg">College Assistant</CardTitle>
-                      <p className="text-xs text-primary-foreground/80">Always here to help</p>
+                  )}
+                  
+                  {messages.map((message) => (
+                    <motion.div
+                      key={message.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                          message.sender === 'user'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-foreground'
+                        }`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                  
+                  {isLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-muted rounded-2xl px-4 py-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      </div>
                     </div>
-                  </div>
+                  )}
+                </div>
+              </ScrollArea>
+
+              {messages.length === 0 && (
+                <div className="px-4 pb-2 flex flex-wrap gap-2">
+                  {quickReplies.map((reply) => (
+                    <Button
+                      key={reply}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setInput(reply);
+                        setTimeout(() => handleSendMessage(), 100);
+                      }}
+                      className="text-xs"
+                    >
+                      {reply}
+                    </Button>
+                  ))}
+                </div>
+              )}
+
+              <div className="p-4 border-t bg-background">
+                <div className="flex gap-2">
+                  <Input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    placeholder="Type your message..."
+                    className="flex-1"
+                    disabled={isLoading}
+                  />
                   <Button
-                    variant="ghost"
+                    onClick={handleSendMessage}
+                    disabled={!input.trim() || isLoading}
                     size="icon"
-                    onClick={() => setIsOpen(false)}
-                    className="text-primary-foreground hover:bg-primary-foreground/20"
+                    className="shrink-0"
                   >
-                    <X className="h-5 w-5" />
+                    <Send className="h-4 w-4" />
                   </Button>
                 </div>
-              </CardHeader>
-
-              <CardContent className="p-0">
-                {/* Messages */}
-                <ScrollArea className="h-96 p-4">
-                  <div className="space-y-4">
-                    {messages.map((message) => (
-                      <motion.div
-                        key={message.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-[80%] rounded-2xl px-4 py-2 ${
-                            message.sender === 'user'
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
-                          }`}
-                        >
-                          <p className="text-sm">{message.text}</p>
-                          <p className="text-xs opacity-70 mt-1">
-                            {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </ScrollArea>
-
-                {/* Quick Replies */}
-                {messages.length === 1 && (
-                  <div className="px-4 pb-3 pt-2 border-t">
-                    <p className="text-xs text-muted-foreground mb-2">Quick actions:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {quickReplies.map((reply, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleQuickReply(reply)}
-                          className="text-xs"
-                        >
-                          {reply}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Input */}
-                <div className="p-4 border-t">
-                  <div className="flex gap-2">
-                    <Input
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                      placeholder="Type your message..."
-                      className="flex-1"
-                    />
-                    <Button onClick={handleSendMessage} size="icon">
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
+              </div>
             </Card>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-shadow"
+      >
+        <MessageCircle className="h-6 w-6 mx-auto" />
+      </motion.button>
     </>
   );
 };

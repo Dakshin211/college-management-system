@@ -18,7 +18,7 @@ interface TopbarProps {
 
 const Topbar = ({ onMenuClick }: TopbarProps) => {
   const { theme, toggleTheme } = useTheme();
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
 
   const getInitials = (name: string) => {
     return name
@@ -67,7 +67,7 @@ const Topbar = ({ onMenuClick }: TopbarProps) => {
               <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                 <Avatar>
                   <AvatarFallback className="bg-primary text-primary-foreground">
-                    {user ? getInitials(user.name) : 'U'}
+                    {profile ? getInitials(profile.name) : 'U'}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -75,11 +75,13 @@ const Topbar = ({ onMenuClick }: TopbarProps) => {
             <DropdownMenuContent className="w-56" align="end">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium">{user?.name}</p>
+                  <p className="text-sm font-medium">{profile?.name || 'User'}</p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
-                  <p className="text-xs text-muted-foreground capitalize">
-                    {user?.role}
-                  </p>
+                  {profile?.roll_no && (
+                    <p className="text-xs text-muted-foreground">
+                      {profile.roll_no}
+                    </p>
+                  )}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

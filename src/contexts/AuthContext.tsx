@@ -12,6 +12,11 @@ interface Profile {
   batch?: string;
   cgpa?: number;
   attendance_percent?: number;
+  phone?: string;
+  dob?: string;
+  address?: string;
+  parent_contact?: string;
+  blood_group?: string;
 }
 
 interface AuthContextType {

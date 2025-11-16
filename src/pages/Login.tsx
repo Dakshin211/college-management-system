@@ -51,21 +51,34 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/10 to-primary/20 animate-gradient-shift" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />
+      
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-        className="w-full max-w-md"
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+        className="w-full max-w-md relative z-10"
       >
-        <Card className="shadow-xl">
-          <CardHeader className="space-y-4 text-center">
-            <div className="mx-auto h-16 w-16 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-lg">
-              <BookOpen className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <CardTitle className="text-2xl">Welcome Back</CardTitle>
-              <CardDescription>Sign in to your CMIS account</CardDescription>
+        <Card className="shadow-2xl border-2 border-primary/10 backdrop-blur-sm bg-background/95">
+          <CardHeader className="space-y-6 text-center pb-8">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="mx-auto relative"
+            >
+              <div className="absolute inset-0 bg-gradient-primary rounded-3xl blur-xl opacity-50 animate-pulse" />
+              <div className="relative h-20 w-20 rounded-3xl bg-gradient-primary flex items-center justify-center shadow-2xl transform hover:scale-110 transition-transform">
+                <BookOpen className="h-10 w-10 text-white" />
+              </div>
+            </motion.div>
+            <div className="space-y-2">
+              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Welcome Back
+              </CardTitle>
+              <CardDescription className="text-base">Sign in to your CMIS account to continue</CardDescription>
             </div>
           </CardHeader>
           <CardContent>
@@ -100,12 +113,12 @@ const Login = () => {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
+                className="w-full bg-gradient-primary hover:opacity-90 transition-all hover:shadow-lg hover:scale-[1.02] text-white font-semibold"
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     Signing in...
                   </>
                 ) : (

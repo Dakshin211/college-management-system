@@ -1,139 +1,123 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-} from 'recharts';
+import { Badge } from '@/components/ui/badge';
+import { Award } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
-const marksData = [
-  { subject: 'Mathematics', internal: 85, external: 78 },
-  { subject: 'Physics', internal: 76, external: 82 },
-  { subject: 'Chemistry', internal: 88, external: 85 },
-  { subject: 'English', internal: 92, external: 88 },
-  { subject: 'Computer Sc.', internal: 90, external: 92 },
-];
-
-const progressData = [
-  { month: 'Jan', average: 72 },
-  { month: 'Feb', average: 75 },
-  { month: 'Mar', average: 78 },
-  { month: 'Apr', average: 81 },
-  { month: 'May', average: 85 },
-  { month: 'Jun', average: 87 },
-];
+interface Mark {
+  internal: number;
+  grade: string;
+  courses: {
+    name: string;
+    code: string;
+    credits: number;
+  };
+}
 
 const Marks = () => {
+  const { profile } = useAuth();
+  const [marks, setMarks] = useState<Mark[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMarks = async () => {
+      if (!profile?.id) return;
+
+      const { data } = await supabase
+        .from('marks')
+        .select(`
+          internal,
+          grade,
+          courses:courses (
+            name,
+            code,
+            credits
+          )
+        `)
+        .eq('student_id', profile.id);
+
+      if (data) setMarks(data as any);
+      setLoading(false);
+    };
+
+    fetchMarks();
+  }, [profile]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  const getGradeColor = (grade: string) => {
+    if (grade === 'A+' || grade === 'A') return 'bg-green-500';
+    if (grade === 'B+' || grade === 'B') return 'bg-blue-500';
+    return 'bg-yellow-500';
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
+      className="space-y-6 p-4 md:p-6"
     >
       <div>
-        <h1 className="text-3xl font-bold">Marks & Results</h1>
-        <p className="text-muted-foreground mt-2">View academic performance and results</p>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle>Subject-wise Marks</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={marksData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="subject" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="internal" fill="hsl(var(--primary))" name="Internal" />
-                  <Bar dataKey="external" fill="hsl(var(--accent))" name="External" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle>Performance Trend</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={progressData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="average"
-                    stroke="hsl(var(--accent))"
-                    strokeWidth={2}
-                    name="Average Score"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <h1 className="text-2xl md:text-3xl font-bold">Academic Performance</h1>
+        <p className="text-muted-foreground mt-2 text-sm md:text-base">View your marks and grades</p>
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
       >
         <Card>
           <CardHeader>
-            <CardTitle>Detailed Marks</CardTitle>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <CardTitle className="flex items-center gap-2">
+                <Award className="h-5 w-5" />
+                Overall CGPA
+              </CardTitle>
+              <div className="text-3xl md:text-4xl font-bold">{profile?.cgpa?.toFixed(2)}</div>
+            </div>
+          </CardHeader>
+        </Card>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>Subject-wise Marks</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {marksData.map((subject, index) => (
+              {marks.map((mark, index) => (
                 <motion.div
-                  key={subject.subject}
+                  key={index}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 + index * 0.1 }}
-                  className="flex items-center justify-between p-4 rounded-lg bg-muted/30"
+                  transition={{ delay: 0.2 + index * 0.1 }}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                 >
-                  <div className="flex-1">
-                    <h4 className="font-semibold">{subject.subject}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Total: {subject.internal + subject.external} / 200
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-sm md:text-base break-words">{mark.courses?.name}</h4>
+                    <p className="text-xs md:text-sm text-muted-foreground">{mark.courses?.code}</p>
                   </div>
-                  <div className="flex gap-4">
+                  <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="text-sm text-muted-foreground">Internal</p>
-                      <p className="font-semibold">{subject.internal}/100</p>
+                      <p className="text-xs text-muted-foreground">Internal</p>
+                      <p className="text-lg md:text-xl font-bold">{mark.internal}/100</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">External</p>
-                      <p className="font-semibold">{subject.external}/100</p>
-                    </div>
+                    <Badge className={`${getGradeColor(mark.grade)} text-white shrink-0`}>
+                      {mark.grade}
+                    </Badge>
                   </div>
                 </motion.div>
               ))}
@@ -141,6 +125,14 @@ const Marks = () => {
           </CardContent>
         </Card>
       </motion.div>
+
+      {marks.length === 0 && (
+        <Card className="p-8 text-center">
+          <Award className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No marks available</h3>
+          <p className="text-muted-foreground text-sm">Your marks will appear here once they are published.</p>
+        </Card>
+      )}
     </motion.div>
   );
 };

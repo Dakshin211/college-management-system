@@ -1,155 +1,139 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BookOpen, Clock, Users, Award } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { BookOpen, Clock } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
-const courses = [
-  {
-    id: 1,
-    name: 'Advanced Mathematics',
-    code: 'MATH301',
-    instructor: 'Dr. Sarah Johnson',
-    students: 45,
-    duration: '60 hours',
-    status: 'Active',
-    progress: 75,
-  },
-  {
-    id: 2,
-    name: 'Data Structures',
-    code: 'CS201',
-    instructor: 'Prof. John Smith',
-    students: 52,
-    duration: '48 hours',
-    status: 'Active',
-    progress: 60,
-  },
-  {
-    id: 3,
-    name: 'Digital Electronics',
-    code: 'ECE301',
-    instructor: 'Dr. Emily Brown',
-    students: 38,
-    duration: '45 hours',
-    status: 'Active',
-    progress: 85,
-  },
-  {
-    id: 4,
-    name: 'Thermodynamics',
-    code: 'ME202',
-    instructor: 'Prof. Michael Davis',
-    students: 41,
-    duration: '50 hours',
-    status: 'Active',
-    progress: 45,
-  },
-  {
-    id: 5,
-    name: 'Database Systems',
-    code: 'CS302',
-    instructor: 'Dr. Lisa Anderson',
-    students: 48,
-    duration: '55 hours',
-    status: 'Active',
-    progress: 70,
-  },
-  {
-    id: 6,
-    name: 'Control Systems',
-    code: 'EE401',
-    instructor: 'Prof. Robert Wilson',
-    students: 36,
-    duration: '52 hours',
-    status: 'Active',
-    progress: 55,
-  },
-];
-
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const item = {
-  hidden: { opacity: 0, scale: 0.9 },
-  show: { opacity: 1, scale: 1 },
-};
+interface Enrollment {
+  progress: number;
+  courses: {
+    name: string;
+    code: string;
+    credits: number;
+    hours: number;
+    faculty: {
+      name: string;
+    };
+  };
+}
 
 const Courses = () => {
+  const { profile } = useAuth();
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      if (!profile?.id) return;
+
+      const { data } = await supabase
+        .from('enrollments')
+        .select(`
+          progress,
+          courses:courses (
+            name,
+            code,
+            credits,
+            hours,
+            faculty:instructor_id (
+              name
+            )
+          )
+        `)
+        .eq('student_id', profile.id);
+
+      if (data) setEnrollments(data as any);
+      setLoading(false);
+    };
+
+    fetchCourses();
+  }, [profile]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
+      className="space-y-6 p-4 md:p-6"
     >
       <div>
-        <h1 className="text-3xl font-bold">Courses</h1>
-        <p className="text-muted-foreground mt-2">Browse and manage course information</p>
+        <h1 className="text-2xl md:text-3xl font-bold">My Courses</h1>
+        <p className="text-muted-foreground mt-2 text-sm md:text-base">Track your enrolled courses and progress</p>
       </div>
 
       <motion.div
         variants={container}
         initial="hidden"
         animate="show"
-        className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+        className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2"
       >
-        {courses.map((course) => (
-          <motion.div key={course.id} variants={item}>
-            <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer group">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                    <BookOpen className="h-6 w-6 text-primary" />
+        {enrollments.map((enrollment, index) => (
+          <motion.div key={index} variants={item}>
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-lg md:text-xl break-words">{enrollment.courses?.name}</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">{enrollment.courses?.code}</p>
                   </div>
-                  <Badge>{course.status}</Badge>
+                  <Badge variant="secondary" className="shrink-0">{enrollment.courses?.credits} Credits</Badge>
                 </div>
-                <CardTitle className="mt-4 group-hover:text-primary transition-colors">
-                  {course.name}
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">{course.code}</p>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>{course.students} students enrolled</span>
+                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    <span>{enrollment.courses?.faculty?.name}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>{course.duration}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Award className="h-4 w-4 text-muted-foreground" />
-                    <span>{course.instructor}</span>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    <span>{enrollment.courses?.hours}hrs</span>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium">{course.progress}%</span>
+                <div>
+                  <div className="flex items-center justify-between text-sm mb-2">
+                    <span className="font-medium">Course Progress</span>
+                    <span className="text-muted-foreground">{enrollment.progress}%</span>
                   </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${course.progress}%` }}
-                      transition={{ duration: 1, delay: 0.2 }}
-                      className="h-full bg-gradient-primary"
-                    />
-                  </div>
+                  <Progress value={enrollment.progress || 0} />
                 </div>
               </CardContent>
             </Card>
           </motion.div>
         ))}
       </motion.div>
+
+      {enrollments.length === 0 && (
+        <Card className="p-8 text-center">
+          <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No courses enrolled</h3>
+          <p className="text-muted-foreground text-sm">You haven't enrolled in any courses yet.</p>
+        </Card>
+      )}
     </motion.div>
   );
 };

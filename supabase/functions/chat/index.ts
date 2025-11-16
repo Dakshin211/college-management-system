@@ -13,12 +13,15 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const systemPrompt = `You are a helpful college assistant for St. Horizon College Portal. You help students with information about:
-- Their courses, marks, and attendance
-- Fee payments and due dates
-- Academic calendar and schedules
-- General college policies and procedures
-Keep responses clear, concise, and student-friendly.`;
+    const systemPrompt = `You are an intelligent academic assistant for college students. You can help with:
+- Subject doubts and explanations (Math, Physics, Computer Science, AI, Data Science, Deep Learning, Cloud Computing, etc.)
+- Problem-solving and step-by-step solutions
+- Conceptual understanding of topics
+- Study tips and learning strategies
+- College management system queries
+- General academic guidance
+
+Provide clear, accurate, and helpful responses. When explaining complex topics, break them down into simple steps. For math problems, show your work.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

@@ -1,159 +1,128 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { DollarSign, CreditCard, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { DollarSign, CheckCircle, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
-const feesSummary = {
-  totalFees: 150000,
-  paidAmount: 100000,
-  pendingAmount: 50000,
-  dueDate: '2025-01-15',
-};
-
-const feeHistory = [
-  { id: 1, date: '2024-08-15', amount: 50000, type: 'Tuition Fee', status: 'Paid' },
-  { id: 2, date: '2024-09-10', amount: 25000, type: 'Lab Fee', status: 'Paid' },
-  { id: 3, date: '2024-10-05', amount: 25000, type: 'Library Fee', status: 'Paid' },
-  { id: 4, date: '2025-01-15', amount: 50000, type: 'Semester Fee', status: 'Pending' },
-];
+interface FeeData {
+  total_fee: number;
+  paid: number;
+  pending: number;
+  due_date: string;
+}
 
 const Fees = () => {
-  const paymentPercentage = (feesSummary.paidAmount / feesSummary.totalFees) * 100;
+  const { profile } = useAuth();
+  const [feeData, setFeeData] = useState<FeeData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFees = async () => {
+      if (!profile?.id) return;
+
+      const { data } = await supabase
+        .from('fees')
+        .select('*')
+        .eq('student_id', profile.id)
+        .single();
+
+      if (data) setFeeData(data);
+      setLoading(false);
+    };
+
+    fetchFees();
+  }, [profile]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
+      className="space-y-6 p-4 md:p-6"
     >
       <div>
-        <h1 className="text-3xl font-bold">Fee Management</h1>
-        <p className="text-muted-foreground mt-2">Track and manage fee payments</p>
+        <h1 className="text-2xl md:text-3xl font-bold">Fee Management</h1>
+        <p className="text-muted-foreground mt-2 text-sm md:text-base">Track your fee payments and dues</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
+      <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Fees</CardTitle>
-              <DollarSign className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Total Fee</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₹{feesSummary.totalFees.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground mt-1">For current academic year</p>
+              <div className="text-2xl md:text-3xl font-bold">₹{feeData?.total_fee.toLocaleString()}</div>
             </CardContent>
           </Card>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Paid Amount</CardTitle>
-              <CreditCard className="h-5 w-5 text-green-600" />
+              <CardTitle className="text-sm font-medium">Amount Paid</CardTitle>
+              <CheckCircle className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                ₹{feesSummary.paidAmount.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">{paymentPercentage.toFixed(0)}% completed</p>
+              <div className="text-2xl md:text-3xl font-bold text-green-600">₹{feeData?.paid.toLocaleString()}</div>
             </CardContent>
           </Card>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Pending Amount</CardTitle>
-              <Clock className="h-5 w-5 text-amber-600" />
+              <AlertCircle className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-amber-600">
-                ₹{feesSummary.pendingAmount.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Due by {feesSummary.dueDate}</p>
+              <div className="text-2xl md:text-3xl font-bold text-destructive">₹{feeData?.pending.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Due: {feeData?.due_date ? new Date(feeData.due_date).toLocaleDateString() : 'N/A'}
+              </p>
             </CardContent>
           </Card>
         </motion.div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
         <Card>
           <CardHeader>
-            <CardTitle>Payment Progress</CardTitle>
+            <CardTitle>Fee Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Payment completion</span>
-                <span className="font-medium">{paymentPercentage.toFixed(0)}%</span>
-              </div>
-              <Progress value={paymentPercentage} className="h-3" />
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Paid: ₹{feesSummary.paidAmount.toLocaleString()}
-                </span>
-                <span className="text-muted-foreground">
-                  Remaining: ₹{feesSummary.pendingAmount.toLocaleString()}
-                </span>
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg bg-muted/50">
+                <div className="flex-1">
+                  <p className="font-medium text-sm md:text-base">Tuition Fee</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Semester 5 - Academic Year 2024-25</p>
+                </div>
+                <Badge variant={feeData && feeData.pending > 0 ? 'destructive' : 'default'} className="shrink-0 self-start sm:self-center">
+                  {feeData && feeData.pending > 0 ? 'Pending' : 'Paid'}
+                </Badge>
               </div>
             </div>
           </CardContent>
         </Card>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle>Payment History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {feeHistory.map((payment, index) => (
-                <motion.div
-                  key={payment.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + index * 0.1 }}
-                  className="flex items-center justify-between p-4 rounded-lg bg-muted/30"
-                >
-                  <div className="flex-1">
-                    <h4 className="font-semibold">{payment.type}</h4>
-                    <p className="text-sm text-muted-foreground">{payment.date}</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="font-semibold">₹{payment.amount.toLocaleString()}</span>
-                    <Badge variant={payment.status === 'Paid' ? 'default' : 'secondary'}>
-                      {payment.status}
-                    </Badge>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </CardContent>
+      {!feeData && (
+        <Card className="p-8 text-center">
+          <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No fee records</h3>
+          <p className="text-muted-foreground text-sm">Your fee information will appear here once available.</p>
         </Card>
-      </motion.div>
+      )}
     </motion.div>
   );
 };

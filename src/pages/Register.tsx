@@ -40,9 +40,13 @@ const Register = () => {
   const onSubmit = async (data: FormData) => {
     setIsLoading(true);
     try {
-      await registerUser(data.name, data.email, data.password);
-      toast.success('Registration successful!');
-      navigate('/dashboard');
+      const { error } = await registerUser(data.name, data.email, data.password);
+      if (error) {
+        toast.error(error.message || 'Registration failed. Please try again.');
+      } else {
+        toast.success('Registration successful!');
+        navigate('/dashboard');
+      }
     } catch (error) {
       toast.error('Registration failed. Please try again.');
     } finally {

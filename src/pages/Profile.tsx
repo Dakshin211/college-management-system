@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Mail, Phone, Calendar, MapPin, Award, TrendingUp, Users, Heart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { ProfileEditDialog } from '@/components/ProfileEditDialog';
 
 const Profile = () => {
   const { profile } = useAuth();
@@ -28,6 +28,7 @@ const Profile = () => {
           <CardContent className="pt-0">
             <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-16 sm:-mt-12">
               <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-background">
+                <AvatarImage src={profile?.avatar_url || ''} />
                 <AvatarFallback className="text-2xl sm:text-4xl bg-primary text-primary-foreground">
                   {profile?.name?.charAt(0) || 'U'}
                 </AvatarFallback>
@@ -41,7 +42,7 @@ const Profile = () => {
                   <span className="text-muted-foreground">• Batch {profile?.batch}</span>
                 </div>
               </div>
-              <Button variant="outline" size="sm" className="mt-4 sm:mt-0">Edit Profile</Button>
+              <ProfileEditDialog />
             </div>
           </CardContent>
         </Card>

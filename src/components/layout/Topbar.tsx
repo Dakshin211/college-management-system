@@ -42,7 +42,7 @@ const Topbar = ({ onMenuClick }: TopbarProps) => {
           </Button>
           <div className="hidden lg:block">
             <h2 className="text-xl font-semibold text-foreground">
-              College Management System
+              Horizon Institute of Technology
             </h2>
           </div>
         </div>

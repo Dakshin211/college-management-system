@@ -57,8 +57,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 <BookOpen className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-bold">St. Horizon</h1>
-                <p className="text-xs text-sidebar-foreground/70">College Portal</p>
+                <h1 className="text-lg font-bold">HIT</h1>
+                <p className="text-xs text-sidebar-foreground/70">Student Portal</p>
               </div>
             </div>
             <button

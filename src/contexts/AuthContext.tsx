@@ -17,6 +17,7 @@ interface Profile {
   address?: string;
   parent_contact?: string;
   blood_group?: string;
+  avatar_url?: string;
 }
 
 interface AuthContextType {

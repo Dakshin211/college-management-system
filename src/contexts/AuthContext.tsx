@@ -101,13 +101,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (name: string, email: string, password: string) => {
     // First check if email exists in profiles table
-    const { data: existingProfile, error: profileError } = await supabase
+    const { data: existingProfile } = await supabase
       .from('profiles')
       .select('email')
       .eq('email', email)
-      .single();
+      .maybeSingle();
     
-    if (profileError || !existingProfile) {
+    if (!existingProfile) {
       return { 
         error: { 
           message: 'This email is not registered in the system. Please contact administration to register as a student or faculty member.' 

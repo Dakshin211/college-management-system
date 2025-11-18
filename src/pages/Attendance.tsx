@@ -117,7 +117,7 @@ const Attendance = () => {
                 mode="single"
                 selected={date}
                 onSelect={setDate}
-                className="rounded-md border"
+                className="rounded-md border pointer-events-auto"
               />
             </CardContent>
           </Card>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,11 +17,25 @@ export const ProfileEditDialog = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    phone: profile?.phone || '',
-    address: profile?.address || '',
-    blood_group: profile?.blood_group || '',
-    parent_contact: profile?.parent_contact || '',
+    phone: '',
+    address: '',
+    blood_group: '',
+    parent_contact: '',
   });
+
+  // Update form data when profile loads or dialog opens
+  useEffect(() => {
+    if (profile && open) {
+      setFormData({
+        phone: profile.phone || '',
+        address: profile.address || '',
+        blood_group: profile.blood_group || '',
+        parent_contact: profile.parent_contact || '',
+      });
+      setAvatarPreview(null);
+      setAvatarFile(null);
+    }
+  }, [profile, open]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

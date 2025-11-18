@@ -144,9 +144,9 @@ const Chatbot = () => {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-20 right-4 md:bottom-24 md:right-6 z-50 w-[calc(100vw-2rem)] md:w-96 max-w-[500px]"
+            className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 w-[calc(100vw-2rem)] md:w-96 max-w-[500px]"
           >
-            <Card className="flex flex-col h-[600px] shadow-2xl border-2 border-primary/20">
+            <Card className="flex flex-col h-[70vh] md:h-[600px] shadow-2xl border-2 border-primary/20">
               <div className="flex items-center justify-between p-4 border-b bg-primary/5">
                 <div className="flex items-center gap-2">
                   <MessageCircle className="h-5 w-5 text-primary" />

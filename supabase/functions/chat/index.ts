@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,6 +15,30 @@ serve(async (req) => {
     const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
     if (!GROQ_API_KEY) throw new Error("GROQ_API_KEY is not configured");
 
+    // Create Supabase client for data access
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // Get user profile from authorization header
+    const authHeader = req.headers.get('Authorization')
+    let userProfile = null
+    
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '')
+      const { data: { user } } = await supabase.auth.getUser(token)
+      
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
+        
+        userProfile = profile
+      }
+    }
+
     const systemPrompt = `You are an intelligent academic assistant for Horizon Institute of Technology students. You can help with:
 - Subject doubts and explanations (Math, Physics, Computer Science, AI, Data Science, Deep Learning, Cloud Computing, etc.)
 - Problem-solving and step-by-step solutions
@@ -21,6 +46,17 @@ serve(async (req) => {
 - Study tips and learning strategies
 - College management system queries
 - General academic guidance
+
+${userProfile ? `Current Student Information:
+- Name: ${userProfile.name}
+- Roll No: ${userProfile.roll_no}
+- Branch: ${userProfile.branch}
+- Semester: ${userProfile.semester}
+- CGPA: ${userProfile.cgpa}
+- Attendance: ${userProfile.attendance_percent}%
+` : ''}
+
+When students ask about their courses, attendance, marks, or fees, provide helpful information based on their profile data above.
 
 Provide clear, accurate, and helpful responses. When explaining complex topics, break them down into simple steps. For math problems, show your work.`;
 

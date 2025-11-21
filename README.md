@@ -73,9 +73,9 @@ http://localhost:5173
 
 Email                                Password
 ----------------------------------------------
-vikram.civil7@hit.edu.in            121212
-ajay.ece7@hit.edu.in                777777
-arun.cse1@hit.edu.in                123456
+1. vikram.civil7@hit.edu.in            121212
+2. ajay.ece7@hit.edu.in                777777
+3. arun.cse1@hit.edu.in                123456
 
 
 ---

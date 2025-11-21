@@ -60,12 +60,19 @@ export const ProfileEditDialog = () => {
       // Upload avatar if changed
       if (avatarFile) {
         const fileExt = avatarFile.name.split('.').pop();
-        const fileName = `${profile.id}-${Date.now()}.${fileExt}`;
+        const fileName = `${Date.now()}-${profile.id}.${fileExt}`;
+        
         const { error: uploadError } = await supabase.storage
           .from('avatars')
-          .upload(fileName, avatarFile, { upsert: true });
+          .upload(fileName, avatarFile, { 
+            upsert: true,
+            contentType: avatarFile.type 
+          });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw new Error('Failed to upload avatar: ' + uploadError.message);
+        }
 
         const { data: { publicUrl } } = supabase.storage
           .from('avatars')
@@ -87,7 +94,6 @@ export const ProfileEditDialog = () => {
 
       toast.success('Profile updated successfully!');
       setOpen(false);
-      window.location.reload();
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('Failed to update profile');

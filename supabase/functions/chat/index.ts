@@ -20,9 +20,13 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Get user profile from authorization header
+    // Get user profile and data from authorization header
     const authHeader = req.headers.get('Authorization')
     let userProfile = null
+    let enrollments = null
+    let marks = null
+    let fees = null
+    let attendanceRecords = null
     
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '')
@@ -36,7 +40,114 @@ serve(async (req) => {
           .single()
         
         userProfile = profile
+
+        if (profile?.id) {
+          // Fetch enrollments with course details
+          const { data: enrollmentData } = await supabase
+            .from('enrollments')
+            .select('*, courses(name, code, credits)')
+            .eq('student_id', profile.id)
+          enrollments = enrollmentData
+
+          // Fetch marks with course details
+          const { data: marksData } = await supabase
+            .from('marks')
+            .select('*, courses(name, code)')
+            .eq('student_id', profile.id)
+          marks = marksData
+
+          // Fetch fees
+          const { data: feesData } = await supabase
+            .from('fees')
+            .select('*')
+            .eq('student_id', profile.id)
+            .single()
+          fees = feesData
+
+          // Fetch recent attendance
+          const { data: attendanceData } = await supabase
+            .from('attendance_records')
+            .select('*, courses(name)')
+            .eq('student_id', profile.id)
+            .order('date', { ascending: false })
+            .limit(10)
+          attendanceRecords = attendanceData
+        }
       }
+    }
+
+    // Check if this is a quick reply question
+    const lastMessage = messages[messages.length - 1]?.content?.toLowerCase()
+    
+    // Handle default questions with direct DB responses
+    if (lastMessage?.includes('what are my courses') || lastMessage?.includes('my courses')) {
+      if (!enrollments || enrollments.length === 0) {
+        return new Response(JSON.stringify({ 
+          content: "You don't have any enrolled courses yet." 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        })
+      }
+      const coursesList = enrollments.map(e => 
+        `• ${e.courses.name} (${e.courses.code}) - ${e.courses.credits} credits`
+      ).join('\n')
+      return new Response(JSON.stringify({ 
+        content: `Here are your enrolled courses:\n\n${coursesList}` 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
+    }
+
+    if (lastMessage?.includes('show my attendance') || lastMessage?.includes('my attendance')) {
+      if (!userProfile) {
+        return new Response(JSON.stringify({ 
+          content: "I couldn't fetch your attendance data." 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        })
+      }
+      const present = attendanceRecords?.filter(r => r.status === 'present').length || 0
+      const total = attendanceRecords?.length || 0
+      return new Response(JSON.stringify({ 
+        content: `Your attendance summary:\n\nOverall Attendance: ${userProfile.attendance_percent?.toFixed(1)}%\nRecent classes: ${present}/${total} attended\n\nRecent records:\n${attendanceRecords?.slice(0, 5).map(r => 
+          `• ${r.courses.name} - ${r.status === 'present' ? '✓' : '✗'} (${new Date(r.date).toLocaleDateString()})`
+        ).join('\n') || 'No records'}` 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
+    }
+
+    if (lastMessage?.includes('check my marks') || lastMessage?.includes('my marks')) {
+      if (!marks || marks.length === 0) {
+        return new Response(JSON.stringify({ 
+          content: "No marks available yet." 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        })
+      }
+      const marksList = marks.map(m => 
+        `• ${m.courses.name} (${m.courses.code}): ${m.internal || 'N/A'} marks - Grade: ${m.grade || 'Pending'}`
+      ).join('\n')
+      return new Response(JSON.stringify({ 
+        content: `Your marks:\n\n${marksList}\n\nCGPA: ${userProfile?.cgpa || 'N/A'}` 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
+    }
+
+    if (lastMessage?.includes('fee status') || lastMessage?.includes('fees')) {
+      if (!fees) {
+        return new Response(JSON.stringify({ 
+          content: "No fee information available." 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        })
+      }
+      return new Response(JSON.stringify({ 
+        content: `Your fee status:\n\nTotal Fee: ₹${fees.total_fee}\nPaid: ₹${fees.paid || 0}\nPending: ₹${fees.pending}\n${fees.due_date ? `Due Date: ${new Date(fees.due_date).toLocaleDateString()}` : ''}` 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
     }
 
     const systemPrompt = `You are an intelligent academic assistant for Horizon Institute of Technology students. You can help with:

@@ -73,27 +73,13 @@ http://localhost:5173
 
 Email                                Password
 ----------------------------------------------
-varsha.aids4@hit.edu.in             111111
-vijay.mech5@hit.edu.in              454545
 vikram.civil7@hit.edu.in            121212
 ajay.ece7@hit.edu.in                777777
 arun.cse1@hit.edu.in                123456
-kritika.it9@hit.edu.in              12341234
+
 
 ---
 
-## 🌐 Project Links
-
-Live Website:
-https://hitcms.netlify.app/
-
-GitHub Profile:
-https://github.com/Dakshin211/
-
-Portfolio:
-https://dakshintech.netlify.app/
-
----
 
 ## 🌱 Future Enhancements
 
@@ -107,10 +93,11 @@ https://dakshintech.netlify.app/
 ---
 
 ## 📫 Contact
-
-Portfolio: https://dakshintech.netlify.app/  
-Email: mailto:dakshin211@gmail.com  
-GitHub: https://github.com/Dakshin211/
+<p align="center">
+  <a href="https://dakshintech.netlify.app/"><img src="https://img.shields.io/badge/Portfolio-FF5722?logo=firefox&logoColor=white&style=flat-square" /></a>
+  <a href="mailto:dakshin211@gmail.com"><img src="https://img.shields.io/badge/Gmail-D14836?logo=gmail&logoColor=white&style=flat-square" /></a>
+  <a href="https://www.linkedin.com/in/dakshin-a-616b112a1/"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?logo=linkedin&logoColor=white&style=flat-square" /></a>
+</p>
 
 ---
 

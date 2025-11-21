@@ -138,7 +138,41 @@ const Attendance = () => {
       }} transition={{
         delay: 0.4
       }}>
-          
+          <Card>
+            <CardHeader>
+              <CardTitle>Attendance Insights</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-lg bg-green-50 dark:bg-green-950">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Status</p>
+                    <p className="text-lg font-semibold text-green-700 dark:text-green-400">
+                      {profile?.attendance_percent && profile.attendance_percent >= 75 ? 'Good Standing' : 'Below Minimum'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">Required</p>
+                    <p className="text-lg font-semibold">75%</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Present</span>
+                    <span className="font-medium">{stats.present} classes</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Absent</span>
+                    <span className="font-medium text-red-600">{stats.absent} classes</span>
+                  </div>
+                  <div className="flex justify-between text-sm pt-2 border-t">
+                    <span className="text-muted-foreground">Total</span>
+                    <span className="font-semibold">{stats.total} classes</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
         <motion.div initial={{

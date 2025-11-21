@@ -21,14 +21,7 @@ const Chatbot = () => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const handleToggle = () => {
-    setIsOpen((prev) => {
-      const next = !prev;
-      if (!next) {
-        setMessages([]);
-        setInput('');
-      }
-      return next;
-    });
+    setIsOpen(!isOpen);
   };
 
   useEffect(() => {
@@ -155,9 +148,9 @@ const Chatbot = () => {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 w-[calc(100vw-2rem)] md:w-96 max-w-[500px]"
+            className="fixed bottom-20 right-4 md:bottom-24 md:right-6 z-50 w-[calc(100vw-2rem)] md:w-96 max-w-[500px]"
           >
-            <Card className="flex flex-col h-[60vh] md:h-[540px] shadow-2xl border-2 border-primary/20">
+            <Card className="flex flex-col h-[50vh] md:h-[480px] shadow-2xl border-2 border-primary/20">
               <div className="flex items-center justify-between p-4 border-b bg-primary/5">
                 <div className="flex items-center gap-2">
                   <MessageCircle className="h-5 w-5 text-primary" />
@@ -190,13 +183,13 @@ const Chatbot = () => {
                       className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                        className={`max-w-[80%] rounded-2xl px-4 py-2 break-words ${
                           message.sender === 'user'
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-muted text-foreground'
                         }`}
                       >
-                        <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                        <p className="text-sm whitespace-pre-wrap break-words">{message.text}</p>
                       </div>
                     </motion.div>
                   ))}
@@ -244,9 +237,9 @@ const Chatbot = () => {
                     onClick={handleSendMessage}
                     disabled={!input.trim() || isLoading}
                     size="icon"
-                    className="shrink-0"
+                    className="shrink-0 h-10 w-10"
                   >
-                    <Send className="h-4 w-4" />
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>

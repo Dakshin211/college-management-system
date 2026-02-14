@@ -124,7 +124,36 @@ const Login = () => {
                 ) : (
                   'Sign In'
                 )}
-              </Button>
+              </Button>}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-center"
+            >
+              <p className="text-sm font-semibold text-primary mb-1">
+                Demo Login Credentials
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Use the following credentials to explore the system
+              </p>
+            
+              <div className="mt-2 space-y-1 text-sm">
+                <p>
+                  <span className="font-medium text-foreground">Email:</span>{' '}
+                  <span className="font-mono text-primary">
+                    arun.cse1@hit.edu.in
+                  </span>
+                </p>
+                <p>
+                  <span className="font-medium text-foreground">Password:</span>{' '}
+                  <span className="font-mono text-primary">
+                    123456
+                  </span>
+                </p>
+              </div>
+            </motion.div>
+
 
               <p className="text-center text-sm text-muted-foreground">
                 Don't have an account?{' '}
